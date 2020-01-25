@@ -8,3 +8,5 @@ edition = "2018"
 
 [dependencies]
 rustpython-vm = "0.1.1"
+[dependencies.quicksilver]
+git = "https://github.com/cedric-h/quicksilver.git"
