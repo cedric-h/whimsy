@@ -11,3 +11,4 @@ rustpython-vm = { git = "https://github.com/RustPython/RustPython.git" }
 rustpython-compiler = { git = "https://github.com/RustPython/RustPython.git" }
 quicksilver = { git = "https://github.com/cedric-h/quicksilver.git" }
 num-traits = "0.2.11"
+fxhash = "0.2.1"
