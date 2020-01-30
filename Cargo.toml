@@ -22,3 +22,6 @@ fxhash = "0.2.1"
 wasm-bindgen = "0.2.58"
 mint = "0.5.4"
 log = "0.4.8"
+[dependencies.web-sys]
+version = "0.3.35"
+features = [ "EventTarget" ]

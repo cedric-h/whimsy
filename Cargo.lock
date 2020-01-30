@@ -3196,6 +3196,7 @@ dependencies = [
  "rustpython-compiler",
  "rustpython-vm",
  "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]

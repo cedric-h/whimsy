@@ -19,11 +19,13 @@ move(300, 300)
 zoom(100)
 for i in range(10):
     spin(time)
-    zoom(0.8)
     move(1, 0)
 
+    push()
+    zoom(0.8 * (i/10) + 0.2)
     fill(1, 1, 1, i/10)
     rect(-.5, -.5, 1, 1)
+    pop()
 
 "#;
 
@@ -168,7 +170,8 @@ impl QuickTest {
     }
 }
 
-async fn app(win: Window, mut gfx: Graphics, mut events: EventStream) -> Result<()> {
+async fn app(win: Window, mut gfx: Graphics, mut events: EventStream, code: String) -> Result<()> {
+    log::info!("{:?}", code);
     let mut qt = QuickTest::new()?;
     loop {
         while let Some(_) = events.next_event().await { }
@@ -178,16 +181,16 @@ async fn app(win: Window, mut gfx: Graphics, mut events: EventStream) -> Result<
     }
 }
 
-#[wasm_bindgen(start)]
-pub fn main() {
+#[wasm_bindgen]
+pub fn main(x: f32, y: f32, code: String) {
     run(
         Settings {
-            size: quicksilver::geom::Vector::new(800.0, 600.0).into(),
+            size: quicksilver::geom::Vector::new(x, y).into(),
             title: "QuickTest",
             multisampling: Some(16),
             ..Settings::default()
         },
-        app
+        move |w, g, e| app(w, g, e, code)
     );
 }
 
