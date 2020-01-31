@@ -19,9 +19,9 @@ rustpython-vm = { git = "https://github.com/RustPython/RustPython.git", features
 rustpython-compiler = { git = "https://github.com/RustPython/RustPython.git" }
 quicksilver = { git = "https://github.com/ryanisaacg/quicksilver.git", features = ["web-sys"] }
 fxhash = "0.2.1"
-wasm-bindgen = "0.2.58"
+wasm-bindgen = { version = "0.2.58", features = [ "serde-serialize" ] }
 mint = "0.5.4"
 log = "0.4.8"
 [dependencies.web-sys]
 version = "0.3.35"
-features = [ "EventTarget" ]
+features = [ "EventTarget", "CustomEvent" ]

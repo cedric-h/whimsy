@@ -170,11 +170,34 @@ impl QuickTest {
     }
 }
 
-async fn app(win: Window, mut gfx: Graphics, mut events: EventStream, code: String) -> Result<()> {
-    log::info!("{:?}", code);
+async fn app(win: Window, mut gfx: Graphics, mut events: EventStream, new_code_events: wasm_bindgen::JsValue) -> Result<()> {
+    use wasm_bindgen::JsCast;
+
+    // create callback
+    let (new_code_tx, new_code_rx) = mpsc::channel();
+    let handler = Closure::wrap(Box::new(move |e: web_sys::CustomEvent| {
+        let code = e.detail().as_string().expect("The detail field of the 'code' event must be a string");
+        new_code_tx
+            .send(code)
+            .expect("Couldn't send new code");
+    }) as Box<dyn FnMut(web_sys::CustomEvent)>);
+    new_code_events
+        .dyn_into::<web_sys::EventTarget>()
+        .expect("third variable passed to main not an EventTarget")
+        .add_event_listener_with_callback("code", handler.as_ref().unchecked_ref())
+        .expect("can't listen to 'code' events on EventTarget passed");
+    // forget the handler to keep it alive
+    handler.forget();
+
     let mut qt = QuickTest::new()?;
     loop {
         while let Some(_) = events.next_event().await { }
+
+        while let Ok(new_code) = new_code_rx.try_recv() {
+            log::info!("{} recieved, setting!", new_code);
+            qt.text = new_code;
+            qt.ast_dirty = true;
+        }
         qt.update()?;
         qt.draw(&mut gfx)?;
         gfx.present(&win)?;
@@ -182,7 +205,7 @@ async fn app(win: Window, mut gfx: Graphics, mut events: EventStream, code: Stri
 }
 
 #[wasm_bindgen]
-pub fn main(x: f32, y: f32, code: String) {
+pub fn main(x: f32, y: f32, new_code_events: wasm_bindgen::JsValue) {
     run(
         Settings {
             size: quicksilver::geom::Vector::new(x, y).into(),
@@ -190,7 +213,7 @@ pub fn main(x: f32, y: f32, code: String) {
             multisampling: Some(16),
             ..Settings::default()
         },
-        move |w, g, e| app(w, g, e, code)
+        move |w, g, e| app(w, g, e, new_code_events)
     );
 }
 
