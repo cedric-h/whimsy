@@ -1,0 +1,29 @@
+document {
+	margin: 0px;
+	padding: 0px;
+	width: 100%;
+	height: 100%;
+}
+
+body {
+	margin: 0px;
+	padding: 0px;
+	width: 100%;
+	height: 100%;
+}
+
+#elm {
+	width: 50%;
+	height: 100%;
+	position: absolute;
+	left: 0px;
+	top: 0px;
+}
+
+canvas {
+	/*width: 50%;
+	height: 100%;*/
+	position: absolute;
+	right: 0px;
+	top: 0px;
+}

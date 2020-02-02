@@ -1,4 +1,10 @@
 /target
 
+elm-stuff/*
+elm.js
+
 *.swp
 *.swo
+
+node_modules/*
+package-lock.json

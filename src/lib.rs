@@ -10,24 +10,11 @@ use wasm_bindgen::prelude::*;
 // quicksilver
 use quicksilver::{
     graphics::Graphics,
-    lifecycle::{run, EventStream, Settings, Window},
+    lifecycle::{run, Event, EventStream, Settings, Window},
     Result,
 };
 
-const START_STRING: &'static str = r#"
-move(300, 300)
-zoom(100)
-for i in range(10):
-    spin(time)
-    move(1, 0)
-
-    push()
-    zoom(0.8 * (i/10) + 0.2)
-    fill(1, 1, 1, i/10)
-    rect(-.5, -.5, 1, 1)
-    pop()
-
-"#;
+const START_STRING: &'static str = r#""#;
 
 pub mod draw {
     use quicksilver::geom::{Rectangle, Transform};
@@ -170,28 +157,52 @@ impl QuickTest {
     }
 }
 
+macro_rules! handle {
+    ( $event_target:expr, $kind:literal, $handler:expr ) => {
+        let handler = Closure::wrap(Box::new($handler) as Box<dyn FnMut(web_sys::CustomEvent)>);
+        (&$event_target)
+            .add_event_listener_with_callback($kind, handler.as_ref().unchecked_ref())
+            .expect(concat!("can't listen to '", $kind, "' events on EventTarget passed"));
+        // forget the handler to keep it alive
+        handler.forget();
+    }
+}
+
 async fn app(win: Window, mut gfx: Graphics, mut events: EventStream, new_code_events: wasm_bindgen::JsValue) -> Result<()> {
     use wasm_bindgen::JsCast;
 
     // create callback
+    let event_target = new_code_events.dyn_into::<web_sys::EventTarget>()
+        .expect("third variable passed to main not an EventTarget");
     let (new_code_tx, new_code_rx) = mpsc::channel();
-    let handler = Closure::wrap(Box::new(move |e: web_sys::CustomEvent| {
+    handle!(&event_target, "code", move |e: web_sys::CustomEvent| {
         let code = e.detail().as_string().expect("The detail field of the 'code' event must be a string");
         new_code_tx
             .send(code)
             .expect("Couldn't send new code");
-    }) as Box<dyn FnMut(web_sys::CustomEvent)>);
-    new_code_events
-        .dyn_into::<web_sys::EventTarget>()
-        .expect("third variable passed to main not an EventTarget")
-        .add_event_listener_with_callback("code", handler.as_ref().unchecked_ref())
-        .expect("can't listen to 'code' events on EventTarget passed");
-    // forget the handler to keep it alive
-    handler.forget();
+    });
+    /*
+    let resize: RefCell<Option<f32>> = RefCell::new(None);
+    handle!(&event_target, "heightResize", move |e: web_sys::CustomEvent| {
+        *resize.borrow_mut() = Some(
+            e
+                .detail()
+                .as_f64()
+                .map(|x| x as f32)
+                .expect("The detail field of the 'heightResize' event must be a float")
+        );
+    });*/
 
     let mut qt = QuickTest::new()?;
     loop {
-        while let Some(_) = events.next_event().await { }
+        while let Some(ev) = events.next_event().await {
+            match ev {
+                Event::Resized(vec) => {
+                    log::info!("{:?}", vec)
+                }
+                _ => {}
+            }
+        }
 
         while let Ok(new_code) = new_code_rx.try_recv() {
             log::info!("{} recieved, setting!", new_code);
