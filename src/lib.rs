@@ -36,7 +36,6 @@ struct QuickTest {
     error: Option<String>,
 
     // rendering
-    timer: usize,
     draw_cmds: mpsc::Receiver<draw::DrawCommand>,
 
     // lang
@@ -72,7 +71,6 @@ impl QuickTest {
 
             // rendering
             draw_cmds,
-            timer: 0,
 
             // ast
             vm,
@@ -85,15 +83,22 @@ impl QuickTest {
     fn format_err(vm: &vm::VirtualMachine, err: vm::pyobject::PyRef<vm::exceptions::PyBaseException>) -> Option<String> {
         let mut out = Vec::new();
         vm::exceptions::write_exception(&mut out, vm, &err);
-        Some(String::from_utf8(out).unwrap())
+        let o = Some(String::from_utf8(out).unwrap());
+        log::info!("{:?}", o);
+        o
+    }
+
+    fn set_time(&mut self, time: f64) {
+        use vm::pyobject::IntoPyObject;
+
+        self
+            .scope
+            .globals
+            .set_item("time", time.into_pyobject(&self.vm).unwrap(), &self.vm)
+            .unwrap();
     }
 
     fn update(&mut self) -> Result<()> {
-        use vm::pyobject::IntoPyObject;
-
-        self.timer += 1;
-        self.scope.globals.set_item("time", (self.timer as f64).into_pyobject(&self.vm).unwrap(), &self.vm).unwrap();
-
         if self.ast_dirty {
             match self.vm
                 .compile(&self.text, Exec, "<embedded>".to_string())
@@ -168,6 +173,14 @@ macro_rules! handle {
     }
 }
 
+fn now() -> f64 {
+    web_sys::window()
+        .expect("Couldn't lock the window object")
+        .performance()
+        .expect("Could not get performance timer")
+        .now()
+}
+
 async fn app(win: Window, mut gfx: Graphics, mut events: EventStream, new_code_events: wasm_bindgen::JsValue) -> Result<()> {
     use wasm_bindgen::JsCast;
 
@@ -177,9 +190,7 @@ async fn app(win: Window, mut gfx: Graphics, mut events: EventStream, new_code_e
     let (new_code_tx, new_code_rx) = mpsc::channel();
     handle!(&event_target, "code", move |e: web_sys::CustomEvent| {
         let code = e.detail().as_string().expect("The detail field of the 'code' event must be a string");
-        new_code_tx
-            .send(code)
-            .expect("Couldn't send new code");
+        new_code_tx.send(code).expect("Couldn't send new code");
     });
     /*
     let resize: RefCell<Option<f32>> = RefCell::new(None);
@@ -193,6 +204,7 @@ async fn app(win: Window, mut gfx: Graphics, mut events: EventStream, new_code_e
         );
     });*/
 
+    let start = now();
     let mut qt = QuickTest::new()?;
     loop {
         while let Some(ev) = events.next_event().await {
@@ -209,6 +221,10 @@ async fn app(win: Window, mut gfx: Graphics, mut events: EventStream, new_code_e
             qt.text = new_code;
             qt.ast_dirty = true;
         }
+
+        let frame_time = now() - start;
+        //log::info!("{}", frame_time);
+        qt.set_time(frame_time);
         qt.update()?;
         qt.draw(&mut gfx)?;
         gfx.present(&win)?;
@@ -328,6 +344,25 @@ fn add_render_methods(
             .unwrap();
             Ok(vm.get_none())
         }
+    )?;
+
+    expose_fn!(
+        "wave",
+        _d,
+        move |vm: &vm::VirtualMachine, args: vm::function::PyFuncArgs| -> vm::pyobject::PyResult {
+            use vm::pyobject::{TryFromObject, IntoPyObject};
+
+            let pymilliseconds: Num = args.bind(vm)?;
+            let ms = pymilliseconds.to_f64();
+            let pytime_raw = vm
+                .current_scope()
+                .globals
+                .get_item_option("time", vm)?
+                .expect("no time variable found");
+            let time_raw: f64 = TryFromObject::try_from_object(vm, pytime_raw)?;
+
+            (time_raw*(std::f64::consts::PI/ms)).sin().abs().into_pyobject(vm)
+        },
     )?;
 
     // TRANSFORMS

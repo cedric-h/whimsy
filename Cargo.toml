@@ -22,6 +22,7 @@ fxhash = "0.2.1"
 wasm-bindgen = { version = "0.2.58", features = [ "serde-serialize" ] }
 mint = "0.5.4"
 log = "0.4.8"
+js-sys = "0.3.35"
 [dependencies.web-sys]
 version = "0.3.35"
 features = [ "EventTarget", "CustomEvent" ]

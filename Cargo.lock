@@ -3192,6 +3192,7 @@ name = "whimsy"
 version = "0.1.0"
 dependencies = [
  "fxhash",
+ "js-sys",
  "log",
  "mint",
  "quicksilver",

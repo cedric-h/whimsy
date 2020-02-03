@@ -3,6 +3,10 @@
 elm-stuff/*
 elm.js
 
+build/*
+dist/*
+scripts/*
+
 *.swp
 *.swo
 

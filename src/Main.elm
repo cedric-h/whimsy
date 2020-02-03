@@ -43,17 +43,37 @@ type alias Model =
 
 startCode : String
 startCode =
-    """move(400, 300)
+    """import math
 
-spin(time)
+move(350, 300)
+zoom(20)
 
-move(-50, -50)
-for i in [ i for i in range(20)]:
-    #spin(time/2)
-    fill(1, 1, 1, 0.1)
-    spin(time/(400 * (time % 80 + 1) * 0.05))
-    rect(i, i, (i+1)/21 * 100, (i+1)/21 * 100)
-"""
+spin(time/100)
+
+count = 30
+for i in range(count):
+    fill(0, i/count*.45, (1 - i/count)*1.45, i/count*0.05)
+    spin(abs(math.sin((math.pi/1500)*(time+(i*100)))) * 5)
+    push()
+    zoom(i * 1.05, 1)
+    rect(-.5, -.5, 1, 1)
+    pop()"""
+{--
+startCode =
+    """fill(0, 1, 1, 0.1)
+move(400, 300)
+
+spin(time/10)
+
+for i in range(50):
+    spin(time/200)
+    #move(i, i)
+    move(1, 1)
+    push()
+    zoom((i+1)/41 * 50, (i+1)/41 * 50)
+    rect(-.5*i, -.5*i, 1, 100)
+    pop()"""
+    --}
 
 init : () -> (Model, Cmd Msg)
 init _ =
