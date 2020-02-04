@@ -16,6 +16,11 @@ Promise
 		});
 
 		let toCanvas = new EventTarget();
+		let toElm = new EventTarget();
+
+		toElm.addEventListener("error", e => {
+			app.ports.pyErrors.send(e.detail);
+		});
 
 		app.ports.codeChange.subscribe((data) => {
 			toCanvas.dispatchEvent(new CustomEvent("code", { detail: data }));
@@ -30,6 +35,6 @@ Promise
 		window.addEventListener('resize', resize);
 
 		setTimeout(resize, 1);
-		rust.main(1366/2, 768, toCanvas);
+		rust.main(1366/2, 768, toCanvas, toElm);
 	})
 	.catch(console.error);

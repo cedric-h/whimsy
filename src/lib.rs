@@ -33,7 +33,7 @@ pub mod draw {
 struct QuickTest {
     // text editing
     text: String,
-    error: Option<String>,
+    to_editor: web_sys::EventTarget,
 
     // rendering
     draw_cmds: mpsc::Receiver<draw::DrawCommand>,
@@ -46,7 +46,7 @@ struct QuickTest {
 }
 
 impl QuickTest {
-    fn new() -> Result<QuickTest> {
+    fn new(to_editor: web_sys::EventTarget) -> Result<QuickTest> {
         log::info!("creating quicktest!");
         let vm = vm::VirtualMachine::new(vm::PySettings {
             initialization_parameter: vm::InitParameter::InitializeInternal,
@@ -61,13 +61,13 @@ impl QuickTest {
         let ast = vm.compile(START_STRING, Exec, "<start>".to_string())
                 .map_err(|err| vm.new_syntax_error(&err))
                 .unwrap_or_else(|e| {
-                    panic!("{}", Self::format_err(&vm, e).unwrap());
+                    panic!("{}", Self::format_err(&vm, e));
                 });
 
         Ok(QuickTest {
             // text editing
             text: START_STRING.to_string(),
-            error: None,
+            to_editor, 
 
             // rendering
             draw_cmds,
@@ -80,12 +80,20 @@ impl QuickTest {
         })
     }
 
-    fn format_err(vm: &vm::VirtualMachine, err: vm::pyobject::PyRef<vm::exceptions::PyBaseException>) -> Option<String> {
+    fn format_err(vm: &vm::VirtualMachine, err: vm::pyobject::PyRef<vm::exceptions::PyBaseException>) -> String {
         let mut out = Vec::new();
-        vm::exceptions::write_exception(&mut out, vm, &err);
-        let o = Some(String::from_utf8(out).unwrap());
-        log::info!("{:?}", o);
-        o
+        vm::exceptions::write_exception(&mut out, vm, &err).expect("could not format exception");
+        String::from_utf8(out).unwrap()
+    }
+
+    fn err_event(err: String) -> web_sys::CustomEvent {
+        let e = web_sys::CustomEvent::new("error").unwrap();
+        
+        e.init_custom_event_with_can_bubble_and_cancelable_and_detail(
+            "error", true, true, &err.into(),
+        );
+
+        e
     }
 
     fn set_time(&mut self, time: f64) {
@@ -109,10 +117,12 @@ impl QuickTest {
                 })
             {
                 Ok(ast) => {
-                    self.error = None;
+                    self.to_editor.dispatch_event(&Self::err_event(String::new()));
                     self.ast = ast;
                 }
-                Err(err) => self.error = Self::format_err(&self.vm, err),
+                Err(err) => {
+                    self.to_editor.dispatch_event(&Self::err_event(Self::format_err(&self.vm, err))).unwrap();
+                }
             };
             self.ast_dirty = false;
         }
@@ -132,7 +142,7 @@ impl QuickTest {
         if let Err(err) = self.vm.run_code_obj(self.ast.clone(), self.scope.clone()) {
             // this really shouldn't happen, we should save asts that don't error.
             log::error!("bad ast slipped in!");
-            self.error = Self::format_err(&self.vm, err);
+            self.to_editor.dispatch_event(&Self::err_event(Self::format_err(&self.vm, err))).unwrap();
         }
         while let Ok(cmd) = self.draw_cmds.try_recv() {
             use draw::DrawCommand::*;
@@ -181,7 +191,7 @@ fn now() -> f64 {
         .now()
 }
 
-async fn app(win: Window, mut gfx: Graphics, mut events: EventStream, new_code_events: wasm_bindgen::JsValue) -> Result<()> {
+async fn app(win: Window, mut gfx: Graphics, mut events: EventStream, new_code_events: wasm_bindgen::JsValue, to_editor: wasm_bindgen::JsValue) -> Result<()> {
     use wasm_bindgen::JsCast;
 
     // create callback
@@ -205,7 +215,11 @@ async fn app(win: Window, mut gfx: Graphics, mut events: EventStream, new_code_e
     });*/
 
     let start = now();
-    let mut qt = QuickTest::new()?;
+    let mut qt = QuickTest::new(
+        to_editor
+            .dyn_into::<web_sys::EventTarget>()
+            .expect("to_editor must be an EventTarget")
+    )?;
     loop {
         while let Some(ev) = events.next_event().await {
             match ev {
@@ -232,7 +246,7 @@ async fn app(win: Window, mut gfx: Graphics, mut events: EventStream, new_code_e
 }
 
 #[wasm_bindgen]
-pub fn main(x: f32, y: f32, new_code_events: wasm_bindgen::JsValue) {
+pub fn main(x: f32, y: f32, new_code_events: wasm_bindgen::JsValue, to_editor: wasm_bindgen::JsValue) {
     run(
         Settings {
             size: quicksilver::geom::Vector::new(x, y).into(),
@@ -240,7 +254,7 @@ pub fn main(x: f32, y: f32, new_code_events: wasm_bindgen::JsValue) {
             multisampling: Some(16),
             ..Settings::default()
         },
-        move |w, g, e| app(w, g, e, new_code_events)
+        move |w, g, e| app(w, g, e, new_code_events, to_editor)
     );
 }
 

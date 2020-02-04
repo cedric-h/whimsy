@@ -2,6 +2,7 @@ port module Main exposing (..)
 
 import Browser
 import CodeEditor
+import Json.Decode 
 import Json.Encode as E
 import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes as Attributes exposing (property)
@@ -13,24 +14,35 @@ import Html.Styled.Events exposing (onInput)
 
 
 port codeChange : E.Value -> Cmd msg
+port pyErrors : (E.Value -> msg) -> Sub msg
 
 
 main =
-  Browser.element
-    { init = init
-    , update = update
-    , subscriptions = subscriptions
-    , view = view >> Html.toUnstyled
-    }
+    Browser.element
+        { init = init
+        , update = update
+        , subscriptions = subscriptions
+        , view = view >> Html.toUnstyled
+        }
 
 
 
 -- SUBSCRIPTIONS
 
 
+handlePortError : Result Json.Decode.Error String -> String
+handlePortError result =
+    case result of
+        Ok value ->
+            value
+        
+        -- an error fetching an error! today is a bad day!
+        Err error ->
+            Json.Decode.errorToString error
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  Sub.none
+    pyErrors (Json.Decode.decodeValue Json.Decode.string >> handlePortError >> PyError )
 
 
 
@@ -38,8 +50,9 @@ subscriptions model =
 
 
 type alias Model =
-  { content : String
-  }
+    { code : String
+    , error : Maybe String
+    }
 
 startCode : String
 startCode =
@@ -77,7 +90,10 @@ for i in range(50):
 
 init : () -> (Model, Cmd Msg)
 init _ =
-    ( { content = startCode }
+    (
+        { code = startCode
+        , error = Nothing
+        }
     , codeChange <| E.string <| startCode
     )
 
@@ -87,16 +103,22 @@ init _ =
 
 
 type Msg
-  = Change String
+    = Change String
+    | PyError String
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
-  case msg of
-    Change newContent ->
-      ( { model | content = newContent }
-      , codeChange <| E.string <| newContent
-      )
+    case msg of
+        Change newCode ->
+            ( { model | code = newCode }
+            , codeChange <| E.string <| newCode
+            )
+    
+        PyError newError ->
+            ( { model | error = if String.length newError > 0 then Just newError else Nothing }
+            , Cmd.none
+            )
 
 
 
@@ -105,10 +127,15 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-  Html.div [ Attributes.id "elm" ]
-    [ CodeEditor.view
-        [ CodeEditor.mode "python"
-        , CodeEditor.value model.content
-        , CodeEditor.onChange Change
+    Html.div [ Attributes.id "elm" ]
+        [ Html.div [ Attributes.id "codeWrapper" ]
+            [ CodeEditor.view
+                [ CodeEditor.mode "python"
+                , CodeEditor.value model.code
+                , CodeEditor.onChange Change
+                ]
+            ]
+        , Html.div
+            [ Attributes.id "pyErr" ]
+            [ Html.text (Maybe.withDefault "" model.error) ]
         ]
-    ]
