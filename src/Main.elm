@@ -58,18 +58,23 @@ startCode : String
 startCode =
     """import math
 
-move(350, 300)
+move(350, 350)
 zoom(20)
 
-spin(time/100)
+spin(time/20)
 
-count = 30
-for i in range(count):
-    fill(0, i/count*.45, (1 - i/count)*1.45, i/count*0.05)
-    spin(abs(math.sin((math.pi/1500)*(time+(i*100)))) * 5)
+count = 50
+for i in range(2):
+    spin(90)
     push()
-    zoom(i * 1.05, 1)
-    rect(-.5, -.5, 1, 1)
+    for i in range(count):
+        fill(0, i/count*.45, (1 - i/count)*1.45, i/count*0.1)
+        curve = abs(math.sin((math.pi/1500)*(time+(i*100))))
+        spin((curve - .5) * 14)
+        push()
+        zoom(i * 0.6, 1)
+        rect(-.5, -.5, 1, 1)
+        pop()
     pop()"""
 {--
 startCode =
