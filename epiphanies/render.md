@@ -8,3 +8,5 @@ Here's some very simple code which uses Whimsy to draw a rectangle on the screen
 ```py
 rect(0, 0, 100, 100)
 ```
+
+

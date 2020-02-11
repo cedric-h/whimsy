@@ -1,14 +1,14 @@
-/target
+*/target
 
-elm-stuff/*
-elm.js
+front/build/*
+front/dist/*
+front/scripts/*
+front/elm-stuff/*
+front/elm.js
+front/node_modules/*
+front/package-lock.json
 
-build/*
-dist/*
-scripts/*
 
 *.swp
 *.swo
 
-node_modules/*
-package-lock.json
