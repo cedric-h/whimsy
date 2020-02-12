@@ -12,3 +12,8 @@ front/package-lock.json
 *.swp
 *.swo
 
+
+
+#Added by cargo
+
+/target
