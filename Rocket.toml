@@ -1,2 +1,2 @@
 [global.databases]
-sqlite_logs = { url = "./db" }
+whims = { url = "./db" }
