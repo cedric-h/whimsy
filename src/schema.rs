@@ -1,6 +1,6 @@
 table! {
-    whims (id) {
-        id -> Integer,
+    whims (title) {
+        title -> Text,
         body -> Text,
     }
 }

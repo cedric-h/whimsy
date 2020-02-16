@@ -1,7 +1,7 @@
 CREATE TABLE whims (
-  id INTEGER NOT NULL PRIMARY KEY,
+  title TEXT NOT NULL PRIMARY KEY,
   body TEXT NOT NULL
 );
 
-INSERT INTO whims (body) VALUES ("demo whim");
-INSERT INTO whims (body) VALUES ("demo whim2");
+INSERT INTO whims (title, body) VALUES ("hi", "rect(0, 0, 100, 100)");
+INSERT INTO whims (title, body) VALUES ("sweep", "rect(wave(100), 0, 100, 100)");

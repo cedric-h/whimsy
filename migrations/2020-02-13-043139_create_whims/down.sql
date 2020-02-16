@@ -1,1 +1,1 @@
-DROP TABLE whims
+DROP TABLE whims;

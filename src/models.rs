@@ -1,5 +1,5 @@
 #[derive(Queryable)]
 pub struct Whim {
-    pub id: i32,
+    pub title: String,
     pub body: String,
 }
