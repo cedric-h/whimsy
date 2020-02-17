@@ -1,7 +1,6 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require('webpack');
-const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
 
 module.exports = {
     entry: './index.js',
@@ -34,11 +33,6 @@ module.exports = {
 	},
 	plugins: [
 		new HtmlWebpackPlugin(),
-		new WasmPackPlugin({
-			extraArgs: "--no-typescript",
-			forceMode: "release",
-			crateDirectory: path.resolve(__dirname, ".")
-		}),
 		// TODO: figure out if this is still necessary
 		// comment from copy/pasted example:
 		// > Have this example work in Edge which doesn't ship `TextEncoder` or

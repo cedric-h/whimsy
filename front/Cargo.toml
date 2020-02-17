@@ -10,10 +10,6 @@ crate-type = ["cdylib", "rlib"]
 name = "whimsy"
 path = "src/lib.rs"
 
-[[bin]]
-name = "whimsy"
-path = "src/main.rs"
-
 [dependencies]
 rustpython-vm = { git = "https://github.com/RustPython/RustPython.git", features = ["freeze-stdlib"] }
 rustpython-compiler = { git = "https://github.com/RustPython/RustPython.git" }

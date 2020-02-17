@@ -20,6 +20,13 @@ body {
 	top: 0px;
 }
 
+#postWhim {
+	position: absolute;
+	right: 0px;
+	bottom: 0px;
+	z-index: 1;
+}
+
 #codeWrapper {
 	width: 50%;
 	height: 100%;

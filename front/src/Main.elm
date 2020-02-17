@@ -5,7 +5,7 @@ import Browser.Navigation as Nav
 import CodeEditor
 import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes as Attributes exposing (property)
-import Html.Styled.Events exposing (onInput)
+import Html.Styled.Events exposing (onClick, onInput)
 import Http
 import Json.Decode
 import Json.Encode as E
@@ -40,52 +40,10 @@ main =
 type alias Model =
     { code : String
     , error : Maybe String
+    , notifications : List Notification
     , key : Nav.Key
     , url : Url.Url
     }
-
-
-startCode : String
-startCode =
-    """import math
-
-move(350, 350)
-zoom(20)
-
-spin(time/20)
-
-count = 50
-for i in range(2):
-    spin(90)
-    push()
-    for i in range(count):
-        fill(0, i/count*.45, (1 - i/count)*1.45, i/count*0.1)
-        curve = abs(math.sin((math.pi/1500)*(time+(i*100))))
-        spin((curve - .5) * 14)
-        push()
-        zoom(i * 0.6, 1)
-        rect(-.5, -.5, 1, 1)
-        pop()
-    pop()"""
-
-
-
-{--
-startCode =
-    """fill(0, 1, 1, 0.1)
-move(400, 300)
-
-spin(time/10)
-
-for i in range(50):
-    spin(time/200)
-    #move(i, i)
-    move(1, 1)
-    push()
-    zoom((i+1)/41 * 50, (i+1)/41 * 50)
-    rect(-.5*i, -.5*i, 1, 100)
-    pop()"""
-    --}
 
 
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -95,8 +53,9 @@ init _ url key =
         dataUrl =
             Url.toString { url | path = "/raw" ++ url.path }
     in
-    ( { code = startCode
+    ( { code = ""
       , error = Nothing
+      , notifications = []
       , url = url
       , key = key
       }
@@ -126,9 +85,16 @@ init _ url key =
 type Msg
     = NewCode String
     | NoWhimErr String
+    | PostWhim
+    | Notify Notification
     | PyError String
     | LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
+
+
+type Notification
+    = Uploaded
+    | UploadErr
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -144,6 +110,33 @@ update msg model =
             , Cmd.none
             )
 
+        Notify note ->
+            ( { model | notifications = note :: model.notifications }
+            , Cmd.none
+            )
+
+        PostWhim ->
+            ( model
+            , Http.request
+                { method = "PUT"
+                , headers = []
+                , url = Url.toString model.url
+                , body = Http.stringBody "text/plain" model.code
+                , expect =
+                    Http.expectWhatever
+                        (\result ->
+                            case result of
+                                Ok _ ->
+                                    Notify Uploaded
+
+                                Err _ ->
+                                    Notify UploadErr
+                        )
+                , timeout = Nothing
+                , tracker = Nothing
+                }
+            )
+
         PyError newError ->
             ( { model
                 | error =
@@ -156,10 +149,11 @@ update msg model =
             , Cmd.none
             )
 
-        _ ->
-            ( model
-            , Cmd.none
-            )
+        LinkClicked _ ->
+            ( model, Cmd.none )
+
+        UrlChanged _ ->
+            ( model, Cmd.none )
 
 
 
@@ -198,6 +192,11 @@ view model =
                         , CodeEditor.value model.code
                         , CodeEditor.onChange NewCode
                         ]
+                    , Html.button
+                        [ Attributes.id "postWhim"
+                        , onClick PostWhim
+                        ]
+                        [ Html.text "Post Whim" ]
                     ]
                 , Html.div
                     [ Attributes.id "pyErr" ]

@@ -25,6 +25,16 @@ mod whim {
             .map(|w| w.body)
     }
 
+    #[rocket::put("/<title>", data = "<body>")]
+    pub fn submit_whim(conn: DbConn, title: String, body: String) -> Result<(), String> {
+        diesel::insert_into(whims::table)
+            .values(&models::Whim { title, body })
+            .execute(&*conn)
+            .map_err(|e| format!("database err: {}", e))?;
+
+        Ok(())
+    }
+
     #[rocket::get("/<_title>")]
     pub fn whim_client(_title: String) -> NamedFile {
         NamedFile::open(std::path::Path::new("front/dist/index.html"))
@@ -33,10 +43,13 @@ mod whim {
 }
 
 fn main() {
+    use rocket::routes;
+    use rocket_contrib::serve::StaticFiles;
+
     rocket::ignite()
         .attach(whim::DbConn::fairing())
-        .mount("/raw/whim", rocket::routes![whim::get_whim])
-        .mount("/whim", rocket::routes![whim::whim_client])
-        .mount("/whim/pub", rocket_contrib::serve::StaticFiles::from("front/dist"))
+        .mount("/raw/whim", routes![whim::get_whim])
+        .mount("/whim", routes![whim::submit_whim, whim::whim_client])
+        .mount("/whim/pub", StaticFiles::from("front/dist"))
         .launch();
 }
