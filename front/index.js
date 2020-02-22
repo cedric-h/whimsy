@@ -1,4 +1,4 @@
-import codeEditor from './codeEditor.js';
+import codeEditor from './custom_elements/codeEditor.js';
 import _ from './css/Main.css';
 
 Promise

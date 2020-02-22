@@ -65,7 +65,7 @@ const load = () => {
     import(/* webpackChunkName: "codemirror-base", webpackMode: "eager" */ "codemirror/lib/codemirror.css"),
     import(/* webpackChunkName: "codemirror-base", webpackMode: "eager" */ "codemirror/addon/lint/lint.css"),
     import(/* webpackChunkName: "codemirror-base", webpackMode: "eager" */ "codemirror/theme/material.css"),
-    import(/* webpackChunkName: "codemirror-base", webpackMode: "eager" */ "./css/CodeEditor.css")
+    import(/* webpackChunkName: "codemirror-base", webpackMode: "eager" */ "../css/CodeEditor.css")
   ]).then(([{ default: CodeMirror }]) => CodeMirror);
 };
 

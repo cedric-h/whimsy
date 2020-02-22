@@ -60,7 +60,7 @@ init _ url key =
       , key = key
       }
     , Cmd.batch
-        [ codeChange <| E.string <| startCode
+        [ codeChange <| E.string <| ""
         , Http.get
             { url = dataUrl
             , expect =

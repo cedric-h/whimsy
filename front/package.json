@@ -1,6 +1,7 @@
 {
   "scripts": {
     "build": "webpack",
+    "elm-watch": "webpack --watch --config webpack.no-rust.config.js",
     "serve": "webpack-dev-server"
   },
   "devDependencies": {
