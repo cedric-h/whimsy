@@ -3,13 +3,25 @@ port module Main exposing (..)
 import Browser
 import Browser.Navigation as Nav
 import CodeEditor
+import GoogleSignIn
 import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes as Attributes exposing (property)
-import Html.Styled.Events exposing (onClick, onInput)
+import Html.Styled.Events as Events
 import Http
 import Json.Decode
 import Json.Encode as E
 import Url
+
+
+
+-- port googleSignOut : E.Value -> Cmd msg
+-- port googleSignOutComplete : (E.Value -> msg) -> Sub msg
+-- GOOGLE
+
+
+id : GoogleSignIn.ClientId
+id =
+    GoogleSignIn.Id "398547776026-3n2qo935d6tl3004a1701tprkaj1a9ru"
 
 
 
@@ -34,6 +46,57 @@ main =
 
 
 
+-- TOP BAR
+
+
+type alias Top =
+    { state : TopState
+    }
+
+
+type TopState
+    = Hint
+    | Bar
+
+
+hintTop : Top
+hintTop =
+    { state = Hint }
+
+
+toggleTop : Top -> Top
+toggleTop top =
+    { top
+        | state =
+            case top.state of
+                Hint ->
+                    Bar
+
+                Bar ->
+                    Hint
+    }
+
+
+viewTop : Top -> msg -> Html msg
+viewTop top msg =
+    case top.state of
+        Hint ->
+            Html.div
+                [ Attributes.id "topHint"
+                , Attributes.class "top"
+                , Events.onClick (toggleTop << msg)
+                ]
+                [ Html.text "Whim?" ]
+
+        Bar ->
+            Html.div
+                [ Attributes.id "topBar"
+                , Attributes.class "top"
+                ]
+                [ Html.text "Bar!" ]
+
+
+
 -- MODEL
 
 
@@ -41,6 +104,7 @@ type alias Model =
     { code : String
     , error : Maybe String
     , notifications : List Notification
+    , top : Top
     , key : Nav.Key
     , url : Url.Url
     }
@@ -56,6 +120,7 @@ init _ url key =
     ( { code = ""
       , error = Nothing
       , notifications = []
+      , top = hintTop
       , url = url
       , key = key
       }
@@ -84,6 +149,7 @@ init _ url key =
 
 type Msg
     = NewCode String
+    | TopChange Top
     | NoWhimErr String
     | PostWhim
     | Notify Notification
@@ -103,6 +169,11 @@ update msg model =
         NewCode newCode ->
             ( { model | code = newCode }
             , codeChange <| E.string <| newCode
+            )
+
+        TopChange top ->
+            ( { model | top = top }
+            , Cmd.none
             )
 
         NoWhimErr err ->
@@ -177,6 +248,7 @@ subscriptions model =
 
 
 
+-- [ GoogleSignIn.styledView [ GoogleSignIn.idAttr id ] ]
 -- VIEW
 
 
@@ -192,11 +264,7 @@ view model =
                         , CodeEditor.value model.code
                         , CodeEditor.onChange NewCode
                         ]
-                    , Html.button
-                        [ Attributes.id "postWhim"
-                        , onClick PostWhim
-                        ]
-                        [ Html.text "Post Whim" ]
+                    , viewTop model.top TopChange
                     ]
                 , Html.div
                     [ Attributes.id "pyErr" ]

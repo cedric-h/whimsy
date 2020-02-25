@@ -21,8 +21,7 @@ module.exports = {
 				use: {
 					loader: 'elm-webpack-loader',
 					options: {
-						optimize: true,
-						runtimeOptions: ['-A128M', '-H128M', '-n8m'],
+						optimize: false,
 						files: [
 							path.resolve(__dirname, "src/Main.elm"),
 						]
@@ -31,16 +30,5 @@ module.exports = {
 			}
 		]
 	},
-	plugins: [
-		new HtmlWebpackPlugin(),
-		// TODO: figure out if this is still necessary
-		// comment from copy/pasted example:
-		// > Have this example work in Edge which doesn't ship `TextEncoder` or
-		// > `TextDecoder` at this time.
-		new webpack.ProvidePlugin({
-			TextDecoder: ['text-encoding', 'TextDecoder'],
-			TextEncoder: ['text-encoding', 'TextEncoder']
-		})
-	],
-	mode: 'production'
+	mode: 'development'
 };
